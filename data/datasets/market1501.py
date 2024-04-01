@@ -22,7 +22,7 @@ class Market1501(BaseImageDataset):
     # identities: 1501 (+1 for background)
     # images: 12936 (train) + 3368 (query) + 15913 (gallery)
     """
-    dataset_dir = 'Market-1501'
+    dataset_dir = 'market1501'
 
     def __init__(self, root='/data2/kzhu/', pseudo_label_subdir='train_mask_annotations', part_num=6, verbose=True, **kwargs):
         super(Market1501, self).__init__()

@@ -154,7 +154,6 @@ def compute_features(clustering_loader, model, device, with_arm=False):
     mask_target_paths=[]
     feats=[]
     pids=[]
-    
     with torch.no_grad():
         for batch_img, batch_mask_target_path, batch_pid in clustering_loader:
             #mask_target_paths.append(batch_mask_target_path)
@@ -173,22 +172,22 @@ def compute_features(clustering_loader, model, device, with_arm=False):
     shape = feats.shape
     feats = feats.view(shape[0], shape[1], -1)
     feats = feats.permute(0, 2, 1)
-    feats = feats.numpy()
+    feats = feats.numpy()   # (12936, 2048, 256)
                 
     
     return feats, mask_target_paths, pids, shape
 
 def cluster_for_each_identity(cfg, feats, mask_paths, shape):
-    
-    _, C, H, W = shape
-    N = feats.shape[0]
-    cluster_feats=feats.reshape(N*H*W, C)
+    _, C, H, W = shape  # (12936, 256, 64, 32)
+    N = feats.shape[0]  # (46, 2048, 256)
+    cluster_feats=feats.reshape(N*H*W, C)   # (94208, 256)
     
     #foreground/background clustering
     deepcluster = clustering.__dict__[cfg.CLUSTERING.AL](2, norm=False)
     
     fore_back_feats=np.linalg.norm(feats, axis=2)
     fore_back_feats=fore_back_feats/np.max(fore_back_feats, axis=1).reshape(N,1)
+    
     fore_back_feats=fore_back_feats.reshape(N*H*W, 1)
     if cfg.CLUSTERING.ENHANCED:
         fore_back_feats=1.0/(1.0+np.exp(-5.0*(2.0*fore_back_feats-1)-3.0))
@@ -301,7 +300,6 @@ def do_train_with_center(
         if engine.state.epoch%clustering_period==1 and engine.state.epoch <= clustering_stop:
         #if False:
         
-            
             torch.cuda.empty_cache()
             feats, pseudo_labels_paths, pids, shape = compute_features(clustering_loader, model, device, with_arm)
             torch.cuda.empty_cache()
@@ -321,8 +319,8 @@ def do_train_with_center(
             
             #evaluate the pseudo-part-labels
             if cfg.DATASETS.NAMES=='market1501':
-                pred_dir = os.path.join(cfg.DATASETS.ROOT_DIR, 'Market-1501', cfg.DATASETS.PSEUDO_LABEL_SUBDIR)
-                gt_dir = os.path.join(cfg.DATASETS.ROOT_DIR, 'Market-1501', cfg.DATASETS.PREDICTED_GT_SUBDIR)
+                pred_dir = os.path.join(cfg.DATASETS.ROOT_DIR, 'market1501', cfg.DATASETS.PSEUDO_LABEL_SUBDIR)
+                gt_dir = os.path.join(cfg.DATASETS.ROOT_DIR, 'market1501', cfg.DATASETS.PREDICTED_GT_SUBDIR)
                 compute_IoU(pred_dir, gt_dir, cfg.CLUSTERING.PART_NUM)
                  
             elif cfg.DATASETS.NAMES=='dukemtmc':
